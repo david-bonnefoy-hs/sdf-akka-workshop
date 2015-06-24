@@ -1,10 +1,7 @@
 package com.boldradius.sdf.akka
 
-import java.util.concurrent.TimeUnit
+import akka.actor.{Actor, ActorLogging, Cancellable, Props}
 
-import akka.actor.{Cancellable, Props, ActorLogging, Actor}
-
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.FiniteDuration
 
 /**
@@ -14,14 +11,12 @@ class SessionTracker(sessionId: Long, timeout: FiniteDuration) extends Actor wit
 
   import context.dispatcher
 
-  val receivedRequests: ListBuffer[Request] = new ListBuffer[Request]
   var currentTimer = createTimer
 
   override def receive: Receive = {
     case request: Request =>
       currentTimer.cancel()
       currentTimer = createTimer
-      receivedRequests += request
     case SessionTracker.Timeout =>
       log.info(s"User $sessionId is idle.")
   }

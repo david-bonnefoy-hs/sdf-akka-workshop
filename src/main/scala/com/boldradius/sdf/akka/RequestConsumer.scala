@@ -1,32 +1,31 @@
 package com.boldradius.sdf.akka
 
-import java.util.concurrent.TimeUnit
+import akka.actor.{Actor, ActorLogging, Props}
 
-import akka.actor.{Props, ActorRef, ActorLogging, Actor}
-import akka.actor.Actor.Receive
-
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 /**
  * Created by davidb on 15-06-24.
  */
 class RequestConsumer extends Actor with ActorLogging {
 
-  val receivedRequests: ListBuffer[Request] = new ListBuffer[Request]
-  val sessionTrackers = scala.collection.mutable.Map.empty[Long, ActorRef]withDefault(
-    sessionId => context.actorOf(SessionTracker.props(sessionId, FiniteDuration(20, TimeUnit.SECONDS))))
+  val aggregator = context.actorOf(StatsAggregatorActor.props())
 
   override def receive: Receive = {
     case request: Request =>
       log.info("Consumer received {}", request)
-      receivedRequests += request
-      sessionTrackers(request.sessionId) ! request
+
+      val monitorName: String = request.sessionId.toString
+      val tracker = context.child(monitorName) getOrElse {
+        context.actorOf(SessionTracker.props(request.sessionId, 20 second), monitorName)
+      }
+      tracker ! request
+      aggregator ! request
   }
 }
 
-object RequestConsumer {
-
+object RequestConsumer
+{
   def props =
     Props(new RequestConsumer)
 }
