@@ -18,6 +18,9 @@ class StatsAggregatorActor extends Actor
     case request: Request =>
       receivedRequests += request
 
+    case ForceFailure =>
+      throw new ForcedFailureException
+
     case GetRequestsPerBrowser =>
       sender() ! RequestsPerBrowser(
         values =
@@ -36,4 +39,7 @@ object StatsAggregatorActor
   case object GetRequestsPerBrowser extends Requests
   
   def props() = Props(new StatsAggregatorActor)
+
+  case object ForceFailure
+  case class ForcedFailureException(msg: String = "") extends IllegalStateException(msg)
 }

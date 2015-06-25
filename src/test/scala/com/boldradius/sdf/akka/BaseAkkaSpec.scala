@@ -27,10 +27,10 @@ abstract class BaseAkkaSpec extends BaseSpec with BeforeAndAfterAll {
   }
 
   implicit val system = ActorSystem()
-//  system.eventStream.publish(TestEvent.Mute(EventFilter.debug()))
-//  system.eventStream.publish(TestEvent.Mute(EventFilter.info()))
-//  system.eventStream.publish(TestEvent.Mute(EventFilter.warning()))
-//  system.eventStream.publish(TestEvent.Mute(EventFilter.error()))
+  system.eventStream.publish(TestEvent.Mute(EventFilter.debug()))
+  system.eventStream.publish(TestEvent.Mute(EventFilter.info()))
+  system.eventStream.publish(TestEvent.Mute(EventFilter.warning()))
+  system.eventStream.publish(TestEvent.Mute(EventFilter.error()))
 
   override protected def afterAll(): Unit = {
     system.shutdown()

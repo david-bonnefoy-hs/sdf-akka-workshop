@@ -1,15 +1,33 @@
 package com.boldradius.sdf.akka
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.SupervisorStrategy.{Stop, Restart, Decider}
+import akka.actor._
+import com.boldradius.sdf.akka.EmailActor.EmailMessage
+import com.boldradius.sdf.akka.RequestConsumer.FailAggregator
+import com.boldradius.sdf.akka.StatsAggregatorActor.ForceFailure
 
 import scala.concurrent.duration._
 
 /**
  * Created by davidb on 15-06-24.
  */
-class RequestConsumer extends Actor with ActorLogging {
+class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) extends Actor with ActorLogging {
 
-  val aggregator = context.actorOf(StatsAggregatorActor.props())
+  val aggregator = createAggregator
+  var aggregatorFailureCount = 0
+
+  override val supervisorStrategy: SupervisorStrategy = {
+    def aggregatorDecider: Decider = {
+      case _ if sender() == aggregator =>
+        aggregatorFailureCount += 1
+        if (aggregatorFailureCount >= maxAggregatorFailureCount) {
+          aggregatorFailureCount = 0
+          emailActor ! EmailMessage("Aggregator agent failed")
+        }
+        Restart
+    }
+    OneForOneStrategy()(aggregatorDecider orElse super.supervisorStrategy.decider)
+  }
 
   override def receive: Receive = {
     case request: Request =>
@@ -21,12 +39,21 @@ class RequestConsumer extends Actor with ActorLogging {
       }
       tracker ! request
       aggregator ! request
+
+    case FailAggregator =>
+      aggregator ! ForceFailure
+  }
+
+  def createAggregator: ActorRef = {
+    context.actorOf(StatsAggregatorActor.props(), "aggregator")
   }
 }
 
 object RequestConsumer
 {
-  def props =
-    Props(new RequestConsumer)
+  def props(maxAggregatorFailureCount: Int, emailActor: ActorRef) =
+    Props(new RequestConsumer(maxAggregatorFailureCount, emailActor))
+
+  case object FailAggregator
 }
 
