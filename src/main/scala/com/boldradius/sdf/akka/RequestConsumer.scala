@@ -3,7 +3,8 @@ package com.boldradius.sdf.akka
 import akka.actor.SupervisorStrategy.{Stop, Restart, Decider}
 import akka.actor._
 import com.boldradius.sdf.akka.EmailActor.EmailMessage
-import com.boldradius.sdf.akka.RequestConsumer.FailAggregator
+import com.boldradius.sdf.akka.RealTimeStatAggregator.StatType
+import com.boldradius.sdf.akka.RequestConsumer.{GetRealTimeStatistics, FailAggregator}
 import com.boldradius.sdf.akka.StatsAggregatorActor.ForceFailure
 
 import scala.concurrent.duration._
@@ -40,6 +41,9 @@ class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) exte
       tracker ! request
       aggregator ! request
 
+    case getStats: GetRealTimeStatistics =>
+      context.actorOf(RealTimeStatAggregator.props(allSessionTrackers, getStats.statType, sender()))
+
     case FailAggregator =>
       aggregator ! ForceFailure
   }
@@ -47,6 +51,9 @@ class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) exte
   def createAggregator: ActorRef = {
     context.actorOf(StatsAggregatorActor.props(), "aggregator")
   }
+
+  def allSessionTrackers =
+    context.children.filterNot(_ == aggregator)
 }
 
 object RequestConsumer
@@ -55,5 +62,7 @@ object RequestConsumer
     Props(new RequestConsumer(maxAggregatorFailureCount, emailActor))
 
   case object FailAggregator
+
+  case class GetRealTimeStatistics(statType: StatType)
 }
 
