@@ -102,12 +102,15 @@ object StatsAggregatorActor
   case class URLDistribution(values: Map[String, Float]) extends Statistic
   case class AverageURLVisitTime(values: Map[String, FiniteDuration]) extends Statistic
 
+  case class RequestList(list: List[Request]) extends Responses
+
   sealed trait Requests
   case object GetRequestsPerBrowser extends Requests
   case object GetBusiestMinuteOfDay extends Requests
   case object GetURLDistribution extends Requests
   case object GetAverageURLVisitTime extends Requests
-  
+  case class TailRequests(duration: FiniteDuration) extends Requests
+
   def props() = Props(new StatsAggregatorActor)
 
   case object ForceFailure

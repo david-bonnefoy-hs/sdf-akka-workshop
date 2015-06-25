@@ -1,6 +1,6 @@
 package com.boldradius.sdf.akka
 
-import akka.actor.SupervisorStrategy.{Stop, Restart, Decider}
+import akka.actor.SupervisorStrategy.{Decider, Restart}
 import akka.actor._
 import com.boldradius.sdf.akka.EmailActor.EmailMessage
 import com.boldradius.sdf.akka.RealTimeStatAggregator.StatType
@@ -13,6 +13,7 @@ import scala.concurrent.duration._
  * Created by davidb on 15-06-24.
  */
 class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) extends Actor with ActorLogging {
+  import RequestConsumer._
 
   val aggregator = createAggregator
   var aggregatorFailureCount = 0
