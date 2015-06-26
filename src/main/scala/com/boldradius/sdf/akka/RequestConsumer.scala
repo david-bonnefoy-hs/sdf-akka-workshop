@@ -16,6 +16,7 @@ class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) exte
   import RequestConsumer._
 
   val aggregator = createAggregator
+  val chatActor = createChatActor
   var aggregatorFailureCount = 0
 
   override val supervisorStrategy: SupervisorStrategy = {
@@ -37,7 +38,7 @@ class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) exte
 
       val monitorName: String = request.sessionId.toString
       val tracker = context.child(monitorName) getOrElse {
-        context.actorOf(SessionTracker.props(request.sessionId, 20 second), monitorName)
+        context.actorOf(SessionTracker.props(request.sessionId, sessionTimeout = 20 second, helpTimeout = 10 second, chatActor), monitorName)
       }
       tracker ! request
       aggregator ! request
@@ -53,8 +54,12 @@ class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) exte
     context.actorOf(StatsAggregatorActor.props(), "aggregator")
   }
 
+  def createChatActor: ActorRef = {
+    context.actorOf(ChatActor.props)
+  }
+
   def allSessionTrackers =
-    context.children.filterNot(_ == aggregator)
+    context.children.filterNot(actor => actor == aggregator || actor == chatActor)
 }
 
 object RequestConsumer
