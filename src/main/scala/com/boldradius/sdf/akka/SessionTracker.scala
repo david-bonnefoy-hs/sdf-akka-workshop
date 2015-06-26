@@ -37,6 +37,7 @@ class SessionTracker(sessionId: Long, sessionTimeout: FiniteDuration, helpTimeou
 
     case UserNeedsHelp =>
       if (!helpWasRequested) {
+        println(s"XXX User $sessionId needs help")
         chatActor ! HelpRequested(sessionId)
         helpWasRequested = true
       }
@@ -53,11 +54,13 @@ class SessionTracker(sessionId: Long, sessionTimeout: FiniteDuration, helpTimeou
   def checkNeedForHelp(request: Request): Unit = {
     if (request.url.contains("/help")) {
       if (helpTimeoutTimer == null) {
+        println(s"XXX User $sessionId opened help page")
         helpTimeoutTimer = createHelpTimeoutTimer
       }
     }
     else {
       if (helpTimeoutTimer != null) {
+        println(s"XXX User $sessionId navigated away from help page")
         helpTimeoutTimer.cancel()
         helpTimeoutTimer = null
       }

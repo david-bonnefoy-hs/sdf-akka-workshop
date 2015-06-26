@@ -12,11 +12,11 @@ import scala.concurrent.duration._
 /**
  * Created by davidb on 15-06-24.
  */
-class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) extends Actor with ActorLogging {
+class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef, chatActor: ActorRef) extends Actor with ActorLogging {
   import RequestConsumer._
 
   val aggregator = createAggregator
-  val chatActor = createChatActor
+  //val chatActor = createChatActor
   var aggregatorFailureCount = 0
 
   override val supervisorStrategy: SupervisorStrategy = {
@@ -64,8 +64,8 @@ class RequestConsumer(maxAggregatorFailureCount: Int, emailActor: ActorRef) exte
 
 object RequestConsumer
 {
-  def props(maxAggregatorFailureCount: Int, emailActor: ActorRef) =
-    Props(new RequestConsumer(maxAggregatorFailureCount, emailActor))
+  def props(maxAggregatorFailureCount: Int, emailActor: ActorRef, chatActor: ActorRef) =
+    Props(new RequestConsumer(maxAggregatorFailureCount, emailActor, chatActor))
 
   case object FailAggregator
 
